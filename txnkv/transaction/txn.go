@@ -1369,7 +1369,12 @@ func (txn *KVTxn) lockKeys(ctx context.Context, lockCtx *tikv.LockCtx, fn func()
 					timeWaited := time.Since(lockCtx.WaitStartTime)
 					atomic.StoreInt64(lockCtx.LockKeysDuration, int64(timeWaited))
 					metrics.TiKVPessimisticLockKeysDuration.Observe(timeWaited.Seconds())
+				} else {
+					logutil.BgLogger().Info("DebugPessimisticLock",
+						zap.Int32("LockWaited", atomic.LoadInt32(lockCtx.PessimisticLockWaited)))
 				}
+			} else {
+				logutil.BgLogger().Info("DebugPessimisticLock PessimisticLockWaited is nil")
 			}
 		} else {
 			logutil.BgLogger().Info(fmt.Sprintf("DebugPessimisticLock %v\n", err))
