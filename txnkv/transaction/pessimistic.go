@@ -194,9 +194,9 @@ func (action actionPessimisticLock) handleSingleBatch(
 			atomic.AddInt64(&action.LockCtx.Stats.LockRPCCount, 1)
 		}
 		if err != nil {
+			logutil.BgLogger().Info("HandleSingleBatch", zap.String("error: ", err.Error()))
 			return err
 		}
-
 		if action.wakeUpMode == kvrpcpb.PessimisticLockWakeUpMode_WakeUpModeNormal {
 			finished, err := action.handlePessimisticLockResponseNormalMode(c, bo, &batch, mutations, resp, &diagCtx)
 			if err != nil {
