@@ -365,9 +365,12 @@ func (action actionPessimisticLock) handlePessimisticLockResponseNormalMode(
 	}
 	resolveLockRes, err := c.store.GetLockResolver().ResolveLocksWithOpts(bo, resolveLockOpts)
 	if err != nil {
+		logutil.BgLogger().Info("NormalResolveLockRes", zap.String("error: ", err.Error()))
 		return true, err
 	}
-
+	logutil.BgLogger().Info(
+		"NormalLockRsp",
+		zap.Int64("txnStartTS", resolveLockRes.TTL))
 	// If msBeforeTxnExpired is not zero, it means there are still locks blocking us acquiring
 	// the pessimistic lock. We should return acquire fail with nowait set or timeout error if necessary.
 	if resolveLockRes.TTL > 0 {
@@ -419,6 +422,7 @@ func (action actionPessimisticLock) handlePessimisticLockResponseForceLockMode(
 		res := lockResp.Results[0]
 		switch res.Type {
 		case kvrpcpb.PessimisticLockKeyResultType_LockResultNormal:
+			logutil.BgLogger().Info("LockedResultNormal")
 			if action.ReturnValues {
 				action.ValuesLock.Lock()
 				action.Values[string(mutationsPb[0].Key)] = kv.ReturnedValue{
@@ -434,6 +438,7 @@ func (action actionPessimisticLock) handlePessimisticLockResponseForceLockMode(
 				action.ValuesLock.Unlock()
 			}
 		case kvrpcpb.PessimisticLockKeyResultType_LockResultLockedWithConflict:
+			logutil.BgLogger().Info("LockedWithConflict")
 			action.ValuesLock.Lock()
 			if action.Values == nil {
 				action.Values = make(map[string]kv.ReturnedValue, 1)
@@ -448,6 +453,7 @@ func (action actionPessimisticLock) handlePessimisticLockResponseForceLockMode(
 			}
 			action.ValuesLock.Unlock()
 		case kvrpcpb.PessimisticLockKeyResultType_LockResultFailed:
+			logutil.BgLogger().Info("LockedFailed")
 			isMutationFailed = true
 		default:
 			panic("unreachable")
@@ -494,9 +500,12 @@ func (action actionPessimisticLock) handlePessimisticLockResponseForceLockMode(
 			}
 			resolveLockRes, err := c.store.GetLockResolver().ResolveLocksWithOpts(bo, resolveLockOpts)
 			if err != nil {
+				logutil.BgLogger().Info("ResolveLockRes", zap.String("error: ", err.Error()))
 				return true, err
 			}
-
+			logutil.BgLogger().Info(
+				"ForceLockRsp",
+				zap.Int64("txnStartTS", resolveLockRes.TTL))
 			// If msBeforeTxnExpired is not zero, it means there are still locks blocking us acquiring
 			// the pessimistic lock. We should return acquire fail with nowait set or timeout error if necessary.
 			if resolveLockRes.TTL > 0 {
