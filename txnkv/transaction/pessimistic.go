@@ -259,10 +259,14 @@ func (action actionPessimisticLock) handleKeyErrorForResolve(
 	for _, keyErr := range keyErrs {
 		// Check already exists error
 		if alreadyExist := keyErr.GetAlreadyExist(); alreadyExist != nil {
+			logutil.BgLogger().Info(
+				"handleKeyErrorForResolve alreadyExist")
 			e := &tikverr.ErrKeyExist{AlreadyExist: alreadyExist}
 			return nil, true, c.extractKeyExistsErr(e)
 		}
 		if deadlock := keyErr.Deadlock; deadlock != nil {
+			logutil.BgLogger().Info(
+				"handleKeyErrorForResolve Deadlock")
 			return nil, true, errors.WithStack(&tikverr.ErrDeadlock{Deadlock: deadlock})
 		}
 
@@ -272,12 +276,16 @@ func (action actionPessimisticLock) handleKeyErrorForResolve(
 		if lockInfo := keyErr.GetLocked(); lockInfo != nil &&
 			lockInfo.DurationToLastUpdateMs > 0 &&
 			lockInfo.DurationToLastUpdateMs < skipResolveThresholdMs {
+			logutil.BgLogger().Info(
+				"handleKeyErrorForResolve GetLocked", zap.Uint64("LastUpdateMs", lockInfo.DurationToLastUpdateMs), zap.Uint64("SkipMs", skipResolveThresholdMs))
 			continue
 		}
 
 		// Extract lock from key error
 		lock, err1 := txnlock.ExtractLockFromKeyErr(keyErr)
 		if err1 != nil {
+			logutil.BgLogger().Info(
+				"handleKeyErrorForResolve ExtractConflictLock")
 			return nil, true, err1
 		}
 		locks = append(locks, lock)
