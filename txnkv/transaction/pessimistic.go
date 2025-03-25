@@ -37,6 +37,7 @@ package transaction
 import (
 	"encoding/hex"
 	"math/rand"
+	"runtime"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -103,6 +104,10 @@ type diagnosticContext struct {
 func (action actionPessimisticLock) handleSingleBatch(
 	c *twoPhaseCommitter, bo *retry.Backoffer, batch batchMutations,
 ) error {
+	buf := make([]byte, 1<<16)
+	runtime.Stack(buf, true)
+	logutil.BgLogger().Info("HandleSingleBatch", zap.Int32("wakeUpMode", int32(action.wakeUpMode)),
+		zap.String("stack", string(buf)))
 	convertMutationsToPb := func(committerMutations CommitterMutations) []*kvrpcpb.Mutation {
 		mutations := make([]*kvrpcpb.Mutation, committerMutations.Len())
 		c.txn.GetMemBuffer().RLock()
@@ -197,6 +202,10 @@ func (action actionPessimisticLock) handleSingleBatch(
 			logutil.BgLogger().Info("HandleSingleBatch", zap.String("error: ", err.Error()))
 			return err
 		}
+		buf := make([]byte, 1<<16)
+		runtime.Stack(buf, true)
+		logutil.BgLogger().Info("HandleSingleBatch", zap.Int32("wakeUpMode", int32(action.wakeUpMode)),
+			zap.String("stack", string(buf)))
 		if action.wakeUpMode == kvrpcpb.PessimisticLockWakeUpMode_WakeUpModeNormal {
 			finished, err := action.handlePessimisticLockResponseNormalMode(c, bo, &batch, mutations, resp, &diagCtx)
 			if err != nil {

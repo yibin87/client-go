@@ -41,6 +41,7 @@ import (
 	errors2 "errors"
 	"math"
 	"math/rand"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -938,7 +939,9 @@ func (c *twoPhaseCommitter) doActionOnGroupMutations(bo *retry.Backoffer, action
 	if histogram := action.tiKVTxnRegionsNumHistogram(); histogram != nil {
 		histogram.Observe(float64(len(groups)))
 	}
-
+	buf := make([]byte, 1<<16)
+	runtime.Stack(buf, true)
+	logutil.BgLogger().Info("doActionOnGroupMutations", zap.String("stack", string(buf)))
 	var sizeFunc = c.keySize
 
 	switch act := action.(type) {

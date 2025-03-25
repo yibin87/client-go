@@ -42,6 +42,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"runtime"
 	"runtime/trace"
 	"slices"
 	"sort"
@@ -1360,24 +1361,14 @@ func (txn *KVTxn) lockKeys(ctx context.Context, lockCtx *tikv.LockCtx, fn func()
 		} else {
 			metrics.TxnCmdHistogramWithLockKeysGeneral.Observe(time.Since(startTime).Seconds())
 		}
-		logutil.BgLogger().Info("DebugPessimisticLock",
-			zap.Bool("emptyError", err == nil),
-			zap.Bool("emptyStats", lockCtx.Stats != nil))
 		if err == nil {
 			if lockCtx.PessimisticLockWaited != nil {
 				if atomic.LoadInt32(lockCtx.PessimisticLockWaited) > 0 {
 					timeWaited := time.Since(lockCtx.WaitStartTime)
 					atomic.StoreInt64(lockCtx.LockKeysDuration, int64(timeWaited))
 					metrics.TiKVPessimisticLockKeysDuration.Observe(timeWaited.Seconds())
-				} else {
-					logutil.BgLogger().Info("DebugPessimisticLock",
-						zap.Int32("LockWaited", atomic.LoadInt32(lockCtx.PessimisticLockWaited)))
 				}
-			} else {
-				logutil.BgLogger().Info("DebugPessimisticLock PessimisticLockWaited is nil")
 			}
-		} else {
-			logutil.BgLogger().Info(fmt.Sprintf("DebugPessimisticLock %v\n", err))
 		}
 		if lockCtx.LockKeysCount != nil {
 			*lockCtx.LockKeysCount += int32(len(keys))
@@ -1531,6 +1522,10 @@ func (txn *KVTxn) lockKeys(ctx context.Context, lockCtx *tikv.LockCtx, fn func()
 		// concurrently execute on multiple regions may lead to deadlock.
 		txn.committer.isFirstLock = txn.lockedCnt == 0 && len(keys) == 1
 		err = txn.committer.pessimisticLockMutations(bo, lockCtx, lockWakeUpMode, &PlainMutations{keys: keys})
+		buf := make([]byte, 1<<16)
+		runtime.Stack(buf, true)
+		logutil.BgLogger().Info("lockKeys", zap.String("err", err.Error()),
+			zap.String("stack", string(buf)))
 		if lockCtx.Stats != nil && bo.GetTotalSleep() > 0 {
 			atomic.AddInt64(&lockCtx.Stats.BackoffTime, int64(bo.GetTotalSleep())*int64(time.Millisecond))
 			lockCtx.Stats.Mu.Lock()
