@@ -1522,10 +1522,12 @@ func (txn *KVTxn) lockKeys(ctx context.Context, lockCtx *tikv.LockCtx, fn func()
 		// concurrently execute on multiple regions may lead to deadlock.
 		txn.committer.isFirstLock = txn.lockedCnt == 0 && len(keys) == 1
 		err = txn.committer.pessimisticLockMutations(bo, lockCtx, lockWakeUpMode, &PlainMutations{keys: keys})
-		buf := make([]byte, 1<<16)
-		runtime.Stack(buf, true)
-		logutil.BgLogger().Info("lockKeys", zap.String("err", err.Error()),
-			zap.String("stack", string(buf)))
+		if err != nil {
+			buf := make([]byte, 1<<16)
+			runtime.Stack(buf, true)
+			logutil.BgLogger().Info("lockKeys", zap.String("err", err.Error()),
+				zap.String("stack", string(buf)))
+		}
 		if lockCtx.Stats != nil && bo.GetTotalSleep() > 0 {
 			atomic.AddInt64(&lockCtx.Stats.BackoffTime, int64(bo.GetTotalSleep())*int64(time.Millisecond))
 			lockCtx.Stats.Mu.Lock()
