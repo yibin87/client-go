@@ -357,6 +357,8 @@ func (action actionPessimisticLock) handlePessimisticLockResponseNormalMode(
 
 	locks, finished, err := action.handleKeyErrorForResolve(c, keyErrs)
 	if err != nil {
+		logutil.BgLogger().Info(
+			"handleKeyErrorForResolve", zap.String("Error", err.Error()))
 		return finished, err
 	}
 	if len(locks) == 0 {
@@ -405,6 +407,8 @@ func (action actionPessimisticLock) handlePessimisticLockResponseNormalMode(
 			}
 		}
 		if action.LockCtx.PessimisticLockWaited != nil {
+			logutil.BgLogger().Info(
+				"NormalLockRsp Set PessimisticLockWaited")
 			atomic.StoreInt32(action.LockCtx.PessimisticLockWaited, 1)
 		}
 	}
@@ -540,6 +544,8 @@ func (action actionPessimisticLock) handlePessimisticLockResponseForceLockMode(
 					}
 				}
 				if action.LockCtx.PessimisticLockWaited != nil {
+					logutil.BgLogger().Info(
+						"ForceLockRsp Set PessimisticLockWaited")
 					atomic.StoreInt32(action.LockCtx.PessimisticLockWaited, 1)
 				}
 			}
