@@ -308,8 +308,15 @@ func (action actionPessimisticLock) handlePessimisticLockResponseNormalMode(
 		return true, errors.New("Pessimistic lock response corrupted")
 	}
 	keyErrs := lockResp.GetErrors()
+	logutil.BgLogger().Info(
+		"handleKeyErrorForResolve",
+		zap.Int("lenKeyErrs", len(keyErrs)))
+	for _, keyErr := range keyErrs {
+		logutil.BgLogger().Info(
+			"handleKeyErrorForResolve",
+			zap.String("keyErr", keyErr.String()))
+	}
 	if len(keyErrs) == 0 {
-
 		if action.LockCtx.Stats != nil {
 			action.LockCtx.Stats.MergeReqDetails(
 				diagCtx.reqDuration,
@@ -359,9 +366,13 @@ func (action actionPessimisticLock) handlePessimisticLockResponseNormalMode(
 	// Because we already waited on tikv, no need to Backoff here.
 	// tikv default will wait 3s(also the maximum wait value) when lock error occurs
 	if diagCtx.resolvingRecordToken == nil {
+		logutil.BgLogger().Info(
+			"resolvingRecordToken is nil")
 		token := c.store.GetLockResolver().RecordResolvingLocks(locks, c.startTS)
 		diagCtx.resolvingRecordToken = &token
 	} else {
+		logutil.BgLogger().Info(
+			"resolvingRecordToken is not nil")
 		c.store.GetLockResolver().UpdateResolvingLocks(locks, c.startTS, *diagCtx.resolvingRecordToken)
 	}
 	resolveLockOpts := txnlock.ResolveLocksOptions{
