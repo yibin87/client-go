@@ -414,11 +414,6 @@ func (action actionPessimisticLock) handlePessimisticLockResponseNormalMode(
 				return true, errors.WithStack(tikverr.ErrLockWaitTimeout)
 			}
 		}
-		if action.LockCtx.PessimisticLockWaited != nil {
-			logutil.BgLogger().Info(
-				"NormalLockRsp Set PessimisticLockWaited")
-			atomic.StoreInt32(action.LockCtx.PessimisticLockWaited, 1)
-		}
 	}
 
 	return false, nil
@@ -550,11 +545,6 @@ func (action actionPessimisticLock) handlePessimisticLockResponseForceLockMode(
 					if time.Since(action.WaitStartTime).Milliseconds() >= action.LockWaitTime() {
 						return true, errors.WithStack(tikverr.ErrLockWaitTimeout)
 					}
-				}
-				if action.LockCtx.PessimisticLockWaited != nil {
-					logutil.BgLogger().Info(
-						"ForceLockRsp Set PessimisticLockWaited")
-					atomic.StoreInt32(action.LockCtx.PessimisticLockWaited, 1)
 				}
 			}
 			return false, nil
