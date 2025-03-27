@@ -81,7 +81,6 @@ var (
 	TiKVTokenWaitDuration                          prometheus.Histogram
 	TiKVTxnHeartBeatHistogram                      *prometheus.HistogramVec
 	TiKVTTLManagerHistogram                        prometheus.Histogram
-	TiKVPessimisticLockKeysDuration                prometheus.Histogram
 	TiKVTTLLifeTimeReachCounter                    prometheus.Counter
 	TiKVNoAvailableConnectionCounter               prometheus.Counter
 	TiKVTwoPCTxnCounter                            *prometheus.CounterVec
@@ -919,7 +918,6 @@ func RegisterMetrics() {
 	prometheus.MustRegister(TiKVTokenWaitDuration)
 	prometheus.MustRegister(TiKVTxnHeartBeatHistogram)
 	prometheus.MustRegister(TiKVTTLManagerHistogram)
-	prometheus.MustRegister(TiKVPessimisticLockKeysDuration)
 	prometheus.MustRegister(TiKVTTLLifeTimeReachCounter)
 	prometheus.MustRegister(TiKVNoAvailableConnectionCounter)
 	prometheus.MustRegister(TiKVTwoPCTxnCounter)
