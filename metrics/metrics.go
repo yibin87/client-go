@@ -527,16 +527,6 @@ func initMetrics(namespace, subsystem string, constLabels prometheus.Labels) {
 			Buckets:     prometheus.ExponentialBuckets(1, 2, 20), // 1s ~ 524288s
 		})
 
-	TiKVPessimisticLockKeysDuration = prometheus.NewHistogram(
-		prometheus.HistogramOpts{
-			Namespace:   namespace,
-			Subsystem:   subsystem,
-			Name:        "pessimistic_lock_keys_duration",
-			Buckets:     prometheus.ExponentialBuckets(0.001, 2, 24), // 1ms ~ 8389s
-			Help:        "tidb txn pessimistic lock keys duration",
-			ConstLabels: constLabels,
-		})
-
 	TiKVTTLLifeTimeReachCounter = prometheus.NewCounter(
 		prometheus.CounterOpts{
 			Namespace:   namespace,
