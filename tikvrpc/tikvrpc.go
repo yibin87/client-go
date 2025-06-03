@@ -47,8 +47,10 @@ import (
 	"github.com/pingcap/kvproto/pkg/mpp"
 	"github.com/pingcap/kvproto/pkg/tikvpb"
 	"github.com/pkg/errors"
+	"github.com/tikv/client-go/v2/internal/logutil"
 	"github.com/tikv/client-go/v2/kv"
 	"github.com/tikv/client-go/v2/oracle"
+	"go.uber.org/zap"
 )
 
 // CmdType represents the concrete request type in Request or response type in Response.
@@ -1062,6 +1064,9 @@ func CallRPC(ctx context.Context, client tikvpb.TikvClient, req *Request) (*Resp
 	var err error
 	switch req.Type {
 	case CmdGet:
+		if req.Get().Context != nil {
+			logutil.BgLogger().Info("GetReq keyspaceName Set", zap.String("Name", req.GetKeyspaceName()))
+		}
 		resp.Resp, err = client.KvGet(ctx, req.Get())
 	case CmdScan:
 		resp.Resp, err = client.KvScan(ctx, req.Scan())
