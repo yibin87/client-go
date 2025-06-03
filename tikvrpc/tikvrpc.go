@@ -1064,6 +1064,7 @@ func CallRPC(ctx context.Context, client tikvpb.TikvClient, req *Request) (*Resp
 	var err error
 	switch req.Type {
 	case CmdGet:
+		logutil.BgLogger().Info("GetReq Meet", zap.Bool("ContextIsNil", req.Get().Context != nil))
 		if req.Get().Context != nil {
 			logutil.BgLogger().Info("GetReq keyspaceName Set", zap.String("Name", req.GetKeyspaceName()))
 		}
